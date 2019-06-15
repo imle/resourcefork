@@ -100,7 +100,7 @@ func ReadResourceForkFromBytes(fileBytes []byte) (r *ResourceFork, err error) {
 			resourceDataOffset := resourceDataOffsetMSB<<16 + resourceDataOffsetLSB
 			resourceDataLength := binary.BigEndian.Uint32(resourcesData[resourceDataOffset:])
 
-			resourceData := resourcesData[resourceDataOffset+4 : resourceDataOffset+resourceDataLength]
+			resourceData := resourcesData[resourceDataOffset+4 : resourceDataOffset+4+resourceDataLength]
 
 			resources.Resources[resourceType][resourceID] = Resource{
 				Type: resourceType,
