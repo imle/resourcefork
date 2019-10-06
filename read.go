@@ -7,6 +7,9 @@ import (
 	"io/ioutil"
 )
 
+//noinspection GoUnusedConst,GoNameStartsWithPackageName
+const ResourceForkIDOffset = 128
+
 const highCharsUnicode = "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø" +
 	"¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄€‹›ﬁﬂ‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ"
 
