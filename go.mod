@@ -1,3 +1,3 @@
-module github.com/stevenimle/resourcefork
+module github.com/imle/resourcefork
 
 go 1.12
