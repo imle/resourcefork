@@ -59,16 +59,18 @@ func ReadResourceForkFromBytes(fileBytes []byte) (r *ResourceFork, err error) {
 	_ = lengthData != binary.BigEndian.Uint32(fileBytes[lengthData:])
 	_ = lengthMap != binary.BigEndian.Uint32(fileBytes[lengthMap:])
 
-	resourcesData := fileBytes[offsetData : offsetData+lengthData]
-	resourcesMap := fileBytes[offsetMap : offsetMap+lengthMap]
+	rdOffset := offsetData + lengthData
+	resourcesData := fileBytes[offsetData:rdOffset:rdOffset]
+	rmOffset := offsetMap + lengthMap
+	resourcesMap := fileBytes[offsetMap:rmOffset:rmOffset]
 
 	offsetTypeList := binary.BigEndian.Uint16(resourcesMap[24:])
 	offsetNameList := binary.BigEndian.Uint16(resourcesMap[26:])
 
-	typeList := resourcesMap[offsetTypeList:offsetNameList]
+	typeList := resourcesMap[offsetTypeList:offsetNameList:offsetNameList]
 	nameList := resourcesMap[offsetNameList:] // Goes to end of buffer
 
-	numberOfTypes := (binary.BigEndian.Uint16(typeList[0:]) + 1) & 0xffff
+	numberOfTypes := (binary.BigEndian.Uint16(typeList[0:]) + 1) & 0xFFFF
 
 	var i uint16
 	for i = 0; i < numberOfTypes; i++ {
@@ -89,10 +91,10 @@ func ReadResourceForkFromBytes(fileBytes []byte) (r *ResourceFork, err error) {
 			offsetResourceName := binary.BigEndian.Uint16(typeList[offset+12*j+2:])
 
 			var resourceName string
-			if offsetResourceName == 0xffff {
+			if offsetResourceName == 0xFFFF {
 				resourceName = ""
 			} else {
-				lengthResourceName := uint8(nameList[offsetResourceName])
+				lengthResourceName := nameList[offsetResourceName]
 
 				resourceName = decodeMacRoman(nameList[offsetResourceName+1 : offsetResourceName+1+uint16(lengthResourceName)])
 			}
@@ -103,7 +105,8 @@ func ReadResourceForkFromBytes(fileBytes []byte) (r *ResourceFork, err error) {
 			resourceDataOffset := resourceDataOffsetMSB<<16 + resourceDataOffsetLSB
 			resourceDataLength := binary.BigEndian.Uint32(resourcesData[resourceDataOffset:])
 
-			resourceData := resourcesData[resourceDataOffset+4 : resourceDataOffset+4+resourceDataLength]
+			rdOffset := resourceDataOffset + 4 + resourceDataLength
+			resourceData := resourcesData[resourceDataOffset+4 : rdOffset : rdOffset]
 
 			resources.Resources[resourceType][resourceID] = Resource{
 				Type: resourceType,
