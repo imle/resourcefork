@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
 //noinspection GoUnusedConst,GoNameStartsWithPackageName
@@ -122,13 +124,83 @@ func ReadResourceForkFromBytes(fileBytes []byte) (r *ResourceFork, err error) {
 	return &resources, nil
 }
 
-func ReadResourceForkFromPath(p string) (*ResourceFork, error) {
-	dat, err := ioutil.ReadFile(p)
+func getNovaDataFilesFromPath(path string) (filePaths []string, err error) {
+	path, err = filepath.Abs(path)
 	if err != nil {
 		return nil, err
 	}
 
-	return ReadResourceForkFromBytes(dat)
+	fi, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if fi.IsDir() {
+		paths, err := ioutil.ReadDir(path)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, v := range paths {
+			if !v.IsDir() && filepath.Ext(v.Name()) != ".ndat" {
+				continue
+			}
+
+			fromPath, err := getNovaDataFilesFromPath(filepath.Join(path, v.Name()))
+			if err != nil {
+				return nil, err
+			}
+
+			filePaths = append(filePaths, fromPath...)
+		}
+
+		return filePaths, nil
+
+	} else if filepath.Ext(fi.Name()) == ".ndat" {
+		return append(filePaths, path), nil
+	}
+
+	return nil, nil
+}
+
+func ReadResourceForkFromPath(paths ...string) (*ResourceFork, error) {
+	var filePaths []string
+	for _, v := range paths {
+		fromPath, err := getNovaDataFilesFromPath(v)
+		if err != nil {
+			return nil, err
+		}
+
+		filePaths = append(filePaths, fromPath...)
+	}
+
+	resFork := &ResourceFork{Resources: map[string]map[uint16]Resource{}}
+	for _, v := range filePaths {
+		dat, err := ioutil.ReadFile(v)
+		if err != nil {
+			return nil, err
+		}
+
+		rf, err := ReadResourceForkFromBytes(dat)
+		if err != nil {
+			return nil, err
+		}
+
+		for name, resMap := range rf.Resources {
+			for idx, res := range resMap {
+				if _, ok := resFork.Resources[name]; !ok {
+					resFork.Resources[name] = map[uint16]Resource{}
+				}
+
+				resFork.Resources[name][idx] = res
+			}
+		}
+	}
+
+	delete(resFork.Resources, "csüm") // Don't care about checksum
+	delete(resFork.Resources, "dsïg") // Don't care about digital signature
+
+	return resFork, nil
 }
 
 // https://gist.github.com/jrus/3113240
